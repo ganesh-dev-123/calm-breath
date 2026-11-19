@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Breathe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0e1f2b; --bg2:#173544; --ink:#eaf4f1; --muted:#9fb8b8;
+  --in:#7fd6c2; --out:#e9b98a; --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.14);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg1:#e9f3f0; --bg2:#d3e6e6; --ink:#12303a; --muted:#4f6f75;
+    --in:#2c9c88; --out:#c9803f; --glass:rgba(255,255,255,.55); --line:rgba(18,48,58,.16);
+  }
+}
+:root[data-theme="light"]{--bg1:#e9f3f0;--bg2:#d3e6e6;--ink:#12303a;--muted:#4f6f75;--in:#2c9c88;--out:#c9803f;--glass:rgba(255,255,255,.55);--line:rgba(18,48,58,.16)}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;height:100%;min-height:100vh;color:var(--ink);
+  font-family:'Manrope',system-ui,sans-serif;
+  background:radial-gradient(120% 90% at 50% 30%,var(--bg2),var(--bg1) 70%);
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:28px 20px 32px;overflow-x:hidden;
+}
+header{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center}
+h1{font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:1.5rem;margin:0;letter-spacing:.01em}
+.icon-btn{
+  background:var(--glass);border:1px solid var(--line);color:var(--ink);
+  width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:1rem;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+button:focus-visible{outline:2px solid var(--in);outline-offset:3px}
+
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:520px;gap:36px}
+.stage{position:relative;width:min(78vw,340px);aspect-ratio:1;display:grid;place-items:center}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line)}
+svg.progress{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+svg.progress circle{fill:none;stroke-width:2.5;stroke-linecap:round}
+.track{stroke:var(--line)}
+#arc{stroke:var(--in);transition:stroke .6s}
+.orb{
+  width:56%;height:56%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ffffffcc,var(--in) 38%,transparent 72%);
+  box-shadow:0 0 80px 10px color-mix(in srgb,var(--in) 45%,transparent);
+  transform:scale(.62);will-change:transform;
+  transition:transform 4s cubic-bezier(.45,.05,.35,1),background .6s,box-shadow .6s;
+}
+.stage.inhale .orb{transform:scale(1.18)}
+.stage.exhale .orb{
+  transform:scale(.62);transition-duration:6s;
+  background:radial-gradient(circle at 35% 30%,#ffffffb0,var(--out) 38%,transparent 72%);
+  box-shadow:0 0 70px 6px color-mix(in srgb,var(--out) 40%,transparent);
+}
+.label{position:absolute;text-align:center;pointer-events:none}
+#phase{font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:clamp(1.8rem,7vw,2.4rem);color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.35);transition:opacity .4s}
+#count{font-size:.95rem;font-weight:500;color:#fff;opacity:.85;margin-top:2px;text-shadow:0 1px 10px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
+.hint{color:var(--muted);font-size:.95rem;min-height:1.4em;text-align:center;margin:0}
+
+.controls{display:flex;gap:14px;align-items:center}
+.primary{
+  background:var(--ink);color:var(--bg1);border:0;border-radius:999px;
+  padding:16px 44px;font:600 1rem 'Manrope',sans-serif;cursor:pointer;min-width:150px;
+  transition:transform .15s,opacity .2s;
+}
+.primary:active{transform:scale(.97)}
+.stats{
+  display:flex;gap:28px;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:20px;padding:14px 26px;
+}
+.stat{text-align:center}
+.stat b{display:block;font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+footer{color:var(--muted);font-size:.82rem;text-align:center}
+@media (prefers-reduced-motion:reduce){
+  .orb,.stage.exhale .orb{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Breathe</h1>
+  <div style="display:flex;gap:10px">
+    <button class="icon-btn" id="sound" aria-label="Toggle sound cue" aria-pressed="false" title="Sound cue">♪</button>
+    <button class="icon-btn" id="theme" aria-label="Switch light or dark theme" title="Theme">◐</button>
+  </div>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <div class="ring"></div>
+    <svg class="progress" viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="track" cx="50" cy="50" r="48"/>
+      <circle id="arc" cx="50" cy="50" r="48" stroke-dasharray="301.6" stroke-dashoffset="301.6"/>
+    </svg>
+    <div class="orb"></div>
+    <div class="label" aria-live="polite">
+      <div id="phase">Ready</div>
+      <div id="count"></div>
+    </div>
+  </div>
+  <p class="hint" id="hint">Breathe in for 4 seconds, out for 6.</p>
+
+  <div class="controls">
+    <button class="primary" id="toggle">Start</button>
+  </div>
+
+  <div class="stats" aria-label="Session stats">
+    <div class="stat"><b id="time">0:00</b><span>Time</span></div>
+    <div class="stat"><b id="cycles">0</b><span>Breaths</span></div>
+  </div>
+</main>
+
+<footer>Sit comfortably. Breathe through your nose if you can.</footer>
+
+<script>
+(function(){
+  var IN=4, OUT=6, CIRC=301.6;
+  var stage=document.getElementById('stage'), arc=document.getElementById('arc');
+  var phaseEl=document.getElementById('phase'), countEl=document.getElementById('count');
+  var hint=document.getElementById('hint'), toggle=document.getElementById('toggle');
+  var timeEl=document.getElementById('time'), cyclesEl=document.getElementById('cycles');
+  var soundBtn=document.getElementById('sound'), themeBtn=document.getElementById('theme');
+  var running=false, startTs=0, sessionStart=0, raf=null, lastPhase='', cycles=0, elapsedBefore=0;
+  var soundOn=false, ctx=null;
+
+  function beep(freq){
+    if(!soundOn) return;
+    try{
+      ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0,ctx.currentTime);
+      g.gain.linearRampToValueAtTime(.12,ctx.currentTime+.05);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.7);
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.75);
+    }catch(e){}
+  }
+  function buzz(){ try{ if(soundOn && navigator.vibrate) navigator.vibrate(30); }catch(e){} }
+
+  function setPhase(p){
+    if(p===lastPhase) return;
+    lastPhase=p;
+    stage.classList.remove('inhale','exhale');
+    void stage.offsetWidth;
+    if(p==='in'){ stage.classList.add('inhale'); phaseEl.textContent='Breathe in'; arc.style.stroke='var(--in)'; beep(528); buzz(); }
+    else { stage.classList.add('exhale'); phaseEl.textContent='Breathe out'; arc.style.stroke='var(--out)'; beep(396); buzz(); }
+  }
+  function fmt(s){ s=Math.floor(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+  function tick(now){
+    if(!running) return;
+    var t=(now-startTs)/1000, cycleLen=IN+OUT;
+    var c=Math.floor(t/cycleLen), pos=t%cycleLen;
+    if(c!==cycles){ cycles=c; cyclesEl.textContent=cycles; }
+    if(pos<IN){
+      setPhase('in');
+      countEl.textContent=Math.ceil(IN-pos);
+      arc.style.strokeDashoffset=CIRC*(1-pos/IN);
+    } else {
+      setPhase('out');
+      var p=pos-IN;
+      countEl.textContent=Math.ceil(OUT-p);
+      arc.style.strokeDashoffset=CIRC*(p/OUT);
+    }
+    timeEl.textContent=fmt(elapsedBefore+(now-sessionStart)/1000);
+    raf=requestAnimationFrame(tick);
+  }
+
+  function start(){
+    running=true; lastPhase=''; cycles=0; cyclesEl.textContent=0;
+    var n=performance.now(); startTs=n; sessionStart=n;
+    toggle.textContent='Pause'; hint.textContent='Follow the circle. Let your shoulders drop.';
+    raf=requestAnimationFrame(tick);
+  }
+  function stop(){
+    running=false; cancelAnimationFrame(raf);
+    elapsedBefore+= (performance.now()-sessionStart)/1000;
+    stage.classList.remove('inhale','exhale'); lastPhase='';
+    phaseEl.textContent='Paused'; countEl.textContent='';
+    arc.style.strokeDashoffset=CIRC;
+    toggle.textContent='Resume'; hint.textContent='Press Resume when you are ready.';
+  }
+  toggle.addEventListener('click',function(){ running?stop():start(); });
+  document.addEventListener('keydown',function(e){
+    if(e.code==='Space' && e.target.tagName!=='BUTTON'){ e.preventDefault(); toggle.click(); }
+  });
+  soundBtn.addEventListener('click',function(){
+    soundOn=!soundOn; soundBtn.setAttribute('aria-pressed',soundOn);
+    soundBtn.style.opacity=soundOn?1:.6; soundBtn.textContent=soundOn?'♪':'♪';
+    if(soundOn) beep(440);
+  });
+  soundBtn.style.opacity=.6;
+  themeBtn.addEventListener('click',function(){
+    var r=document.documentElement;
+    var dark=getComputedStyle(r).getPropertyValue('--bg1').trim()==='#0e1f2b';
+    r.setAttribute('data-theme',dark?'light':'dark');
+  });
+})();
+</script>
+</body>
+</html>
